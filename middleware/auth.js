@@ -6,54 +6,21 @@ const auth = async (req, res, next) => {
         const token = req.header('Authorization')?.replace('Bearer ', '');
         
         if (!token) {
-            return res.status(401).json({ 
-                success: false,
-                message: 'Access denied. No token provided.' 
-            });
+            return res.status(401).json({ message: 'No token provided' });
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        const user = await User.findById(decoded.userId).select('-password');
+        const user = await User.findById(decoded.userId);
         
         if (!user) {
-            return res.status(401).json({ 
-                success: false,
-                message: 'Invalid token. User not found.' 
-            });
-        }
-
-        if (!user.isActive) {
-            return res.status(401).json({ 
-                success: false,
-                message: 'Account is deactivated.' 
-            });
+            return res.status(401).json({ message: 'Invalid token' });
         }
 
         req.user = decoded;
-        req.userProfile = user;
         next();
         
     } catch (error) {
-        console.error('Auth middleware error:', error);
-        
-        if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({ 
-                success: false,
-                message: 'Invalid token.' 
-            });
-        }
-        
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({ 
-                success: false,
-                message: 'Token expired.' 
-            });
-        }
-        
-        res.status(500).json({ 
-            success: false,
-            message: 'Server error during authentication.' 
-        });
+        res.status(401).json({ message: 'Invalid token' });
     }
 };
 
