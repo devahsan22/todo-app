@@ -4,6 +4,7 @@ const TodoList = () => {
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchTodos();
@@ -11,6 +12,7 @@ const TodoList = () => {
 
   const fetchTodos = async () => {
     try {
+      setError('');
       const response = await fetch('/api/todos', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -19,9 +21,12 @@ const TodoList = () => {
       if (response.ok) {
         const data = await response.json();
         setTodos(data);
+      } else {
+        setError('Failed to load todos');
       }
     } catch (error) {
       console.error('Error fetching todos:', error);
+      setError('Failed to load todos');
     } finally {
       setLoading(false);
     }
@@ -43,9 +48,12 @@ const TodoList = () => {
           const todo = await response.json();
           setTodos([todo, ...todos]);
           setNewTodo('');
+        } else {
+          setError('Failed to add todo');
         }
       } catch (error) {
         console.error('Error adding todo:', error);
+        setError('Failed to add todo');
       }
     }
   };
@@ -67,9 +75,12 @@ const TodoList = () => {
         setTodos(todos.map(todo => 
           todo._id === id ? updatedTodo : todo
         ));
+      } else {
+        setError('Failed to update todo');
       }
     } catch (error) {
       console.error('Error updating todo:', error);
+      setError('Failed to update todo');
     }
   };
 
@@ -84,19 +95,24 @@ const TodoList = () => {
       
       if (response.ok) {
         setTodos(todos.filter(todo => todo._id !== id));
+      } else {
+        setError('Failed to delete todo');
       }
     } catch (error) {
       console.error('Error deleting todo:', error);
+      setError('Failed to delete todo');
     }
   };
 
   if (loading) {
-    return <div>Loading todos...</div>;
+    return <div className="loading">Loading todos...</div>;
   }
 
   return (
     <div className="todo-list">
       <h2>My Todos</h2>
+      
+      {error && <div className="error">{error}</div>}
       
       <div className="add-todo">
         <input
@@ -122,6 +138,10 @@ const TodoList = () => {
           </li>
         ))}
       </ul>
+      
+      {todos.length === 0 && !loading && (
+        <p className="no-todos">No todos yet. Add one above!</p>
+      )}
     </div>
   );
 };
